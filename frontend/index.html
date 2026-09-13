@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Control de Extintores</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Control de Extintores</h1>
+        <p>Registro y control de extintores</p>
+    </header>
+
+    <main>
+
+        <!-- FORMULARIO -->
+        <section>
+            <h2>Agregar extintor</h2>
+
+            <form id="form-extintor">
+
+                <label>Código</label>
+                <input type="text" id="codigo" placeholder="Ej: EXT-002" required>
+
+                <label>Ubicación</label>
+                <input type="text" id="ubicacion" placeholder="Ej: Casa" required>
+
+                <label>Capacidad (kg)</label>
+                <input type="number" id="capacidad" step="0.1">
+
+                <label>Fecha de vencimiento</label>
+                <input type="date" id="fecha_vencimiento" required>
+
+                <label>Última mantención</label>
+                <input type="date" id="ultima_mantencion">
+
+                <label>Observaciones</label>
+                <textarea id="observaciones" placeholder="Ej: Sin daños"></textarea>
+
+                <button type="submit">
+                    Agregar extintor
+                </button>
+
+            </form>
+
+            <p id="mensaje"></p>
+
+        </section>
+
+
+        <!-- LISTA DE EXTINTORES -->
+        <section>
+            <h2>Mis extintores</h2>
+
+            <div id="lista-extintores">
+                Cargando extintores...
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
