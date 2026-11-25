@@ -15,9 +15,38 @@
     <header>
         <h1>Control de Extintores</h1>
         <p>Registro y control de extintores</p>
+
+        <div id="barra-sesion" hidden>
+            <span id="usuario-actual"></span>
+            <button type="button" id="boton-salir">Cerrar sesión</button>
+        </div>
     </header>
 
-    <main>
+    <!-- LOGIN -->
+    <main id="pantalla-login">
+        <section>
+            <h2>Iniciar sesión</h2>
+
+            <form id="form-login">
+
+                <label for="login-usuario">Usuario</label>
+                <input type="text" id="login-usuario" autocomplete="username" required>
+
+                <label for="login-password">Contraseña</label>
+                <input type="password" id="login-password" autocomplete="current-password" required>
+
+                <button type="submit" id="boton-entrar">
+                    Entrar
+                </button>
+
+            </form>
+
+            <p id="mensaje-login"></p>
+        </section>
+    </main>
+
+    <!-- SISTEMA (solo con sesión iniciada) -->
+    <main id="pantalla-app" hidden>
 
         <!-- FORMULARIO -->
         <section>
@@ -37,7 +66,7 @@
                 <label>Fecha de vencimiento</label>
                 <input type="date" id="fecha_vencimiento" required>
 
-                <label>Última mantención</label>
+                <label>Prueba hidrostática</label>
                 <input type="date" id="ultima_mantencion">
 
                 <label>Observaciones</label>

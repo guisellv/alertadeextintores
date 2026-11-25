@@ -1,4 +1,3 @@
-
 // Dirección del backend.
 // CAMBIA "TU-APP" por el nombre de tu servicio en Render
 // (lo ves en el panel de Render, ej: https://extintores-api.onrender.com).
@@ -6,14 +5,126 @@ const URL_BACKEND_PRODUCCION = 'https://extintores-api.onrender.com';
 
 const esLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
 
-const API_URL = (esLocal ? 'http://localhost:3000' : URL_BACKEND_PRODUCCION) +
-    '/extintores';
+const URL_BASE = esLocal ? 'http://localhost:3000' : URL_BACKEND_PRODUCCION;
+const API_URL = URL_BASE + '/extintores';
+
+
+// ---------- Sesión ----------
+
+const CLAVE_TOKEN = 'extintores_token';
+const CLAVE_USUARIO = 'extintores_usuario';
+
+function obtenerToken() {
+    return localStorage.getItem(CLAVE_TOKEN);
+}
+
+function mostrarLogin(mensaje = '') {
+    localStorage.removeItem(CLAVE_TOKEN);
+    localStorage.removeItem(CLAVE_USUARIO);
+
+    document.getElementById('pantalla-app').hidden = true;
+    document.getElementById('barra-sesion').hidden = true;
+    document.getElementById('pantalla-login').hidden = false;
+    document.getElementById('mensaje-login').textContent = mensaje;
+    document.getElementById('login-usuario').focus();
+}
+
+function mostrarApp() {
+    document.getElementById('pantalla-login').hidden = true;
+    document.getElementById('pantalla-app').hidden = false;
+    document.getElementById('barra-sesion').hidden = false;
+    document.getElementById('usuario-actual').textContent =
+        'Usuario: ' + (localStorage.getItem(CLAVE_USUARIO) || '');
+
+    cargarExtintores();
+}
+
+// fetch que envía el token. Si la sesión venció, vuelve al login.
+async function fetchConSesion(url, opciones = {}) {
+    const respuesta = await fetch(url, {
+        ...opciones,
+        headers: {
+            ...opciones.headers,
+            Authorization: 'Bearer ' + obtenerToken()
+        }
+    });
+
+    if (respuesta.status === 401) {
+        mostrarLogin('Tu sesión terminó. Vuelve a iniciar sesión.');
+        throw new Error('Sesión no válida');
+    }
+
+    return respuesta;
+}
+
+// Iniciar sesión
+document.getElementById('form-login').addEventListener(
+    'submit',
+    async (event) => {
+
+        event.preventDefault();
+
+        const boton = document.getElementById('boton-entrar');
+        const mensaje = document.getElementById('mensaje-login');
+
+        boton.disabled = true;
+        mensaje.textContent = 'Entrando... (la primera vez puede tardar hasta 1 minuto)';
+
+        try {
+            const respuesta = await fetch(URL_BASE + '/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    usuario: document.getElementById('login-usuario').value,
+                    password: document.getElementById('login-password').value
+                })
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok) {
+                mensaje.textContent = resultado.mensaje || 'No se pudo iniciar sesión.';
+                return;
+            }
+
+            localStorage.setItem(CLAVE_TOKEN, resultado.token);
+            localStorage.setItem(CLAVE_USUARIO, resultado.usuario);
+
+            document.getElementById('form-login').reset();
+            mensaje.textContent = '';
+            mostrarApp();
+
+        } catch (error) {
+            console.error(error);
+            mensaje.textContent = 'Error al conectar con el servidor.';
+
+        } finally {
+            boton.disabled = false;
+        }
+    }
+);
+
+// Cerrar sesión
+document.getElementById('boton-salir').addEventListener('click', () => {
+    mostrarLogin();
+});
+
+
+// Evita que el texto guardado se interprete como HTML
+function escapar(valor) {
+    return String(valor ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 
 // Cargar todos los extintores
 async function cargarExtintores() {
     try {
-        const respuesta = await fetch(API_URL);
+        const respuesta = await fetchConSesion(API_URL);
         const extintores = await respuesta.json();
 
         const lista = document.getElementById('lista-extintores');
@@ -43,48 +154,48 @@ async function cargarExtintores() {
             }
 
             tarjeta.innerHTML = `
-                <h3>${extintor.codigo}</h3>
+                <h3>${escapar(extintor.codigo)}</h3>
 
                 <p>
                     <strong>Ubicación:</strong>
-                    ${extintor.ubicacion}
+                    ${escapar(extintor.ubicacion)}
                 </p>
 
                 <p>
                     <strong>Capacidad:</strong>
-                    ${extintor.capacidad} kg
+                    ${escapar(extintor.capacidad)} kg
                 </p>
 
                 <p>
                     <strong>Vencimiento:</strong>
-                    ${extintor.fecha_vencimiento}
+                    ${escapar(extintor.fecha_vencimiento)}
                 </p>
 
                 <p>
                     <strong>Estado:</strong>
                     <span class="${claseEstado}">
-                        ${extintor.estado}
+                        ${escapar(extintor.estado)}
                     </span>
                 </p>
 
                 <p>
-                    <strong>Última mantención:</strong>
-                    ${extintor.ultima_mantencion || 'No registrada'}
+                    <strong>Prueba hidrostática:</strong>
+                    ${escapar(extintor.ultima_mantencion || 'No registrada')}
                 </p>
 
                 <p>
                     <strong>Observaciones:</strong>
-                    ${extintor.observaciones || 'Ninguna'}
+                    ${escapar(extintor.observaciones || 'Ninguna')}
                 </p>
 
                 ${
                     extintor.estado === 'vacío'
                     ?
-                    `<button onclick="volverAutomatico(${extintor.id})">
+                    `<button onclick="volverAutomatico(${Number(extintor.id)})">
                         Volver a estado automático
                     </button>`
                     :
-                    `<button onclick="marcarVacio(${extintor.id})">
+                    `<button onclick="marcarVacio(${Number(extintor.id)})">
                         Marcar como vacío
                     </button>`
                 }
@@ -96,8 +207,10 @@ async function cargarExtintores() {
     } catch (error) {
         console.error('Error:', error);
 
-        document.getElementById('lista-extintores').innerHTML =
-            '<p>Error al conectar con el servidor.</p>';
+        if (error.message !== 'Sesión no válida') {
+            document.getElementById('lista-extintores').innerHTML =
+                '<p>Error al conectar con el servidor.</p>';
+        }
     }
 }
 
@@ -122,7 +235,7 @@ document.getElementById('form-extintor').addEventListener(
         };
 
         try {
-            const respuesta = await fetch(API_URL, {
+            const respuesta = await fetchConSesion(API_URL, {
                 method: 'POST',
 
                 headers: {
@@ -148,8 +261,10 @@ document.getElementById('form-extintor').addEventListener(
         } catch (error) {
             console.error(error);
 
-            document.getElementById('mensaje').textContent =
-                'Error al agregar el extintor.';
+            if (error.message !== 'Sesión no válida') {
+                document.getElementById('mensaje').textContent =
+                    'Error al agregar el extintor.';
+            }
         }
     }
 );
@@ -167,7 +282,7 @@ async function marcarVacio(id) {
     }
 
     try {
-        const respuesta = await fetch(
+        const respuesta = await fetchConSesion(
             `${API_URL}/${id}/vacio`,
             {
                 method: 'PUT'
@@ -183,7 +298,9 @@ async function marcarVacio(id) {
     } catch (error) {
         console.error(error);
 
-        alert('Error al marcar el extintor como vacío.');
+        if (error.message !== 'Sesión no válida') {
+            alert('Error al marcar el extintor como vacío.');
+        }
     }
 }
 
@@ -192,7 +309,7 @@ async function marcarVacio(id) {
 async function volverAutomatico(id) {
 
     try {
-        const respuesta = await fetch(
+        const respuesta = await fetchConSesion(
             `${API_URL}/${id}/automatico`,
             {
                 method: 'PUT'
@@ -208,11 +325,16 @@ async function volverAutomatico(id) {
     } catch (error) {
         console.error(error);
 
-        alert('Error al volver al estado automático.');
+        if (error.message !== 'Sesión no válida') {
+            alert('Error al volver al estado automático.');
+        }
     }
 }
 
 
-// Cargar los extintores al abrir la página
-cargarExtintores();
-
+// Al abrir la página: si ya hay sesión, entrar directo; si no, pedir login
+if (obtenerToken()) {
+    mostrarApp();
+} else {
+    mostrarLogin();
+}

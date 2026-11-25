@@ -22,3 +22,13 @@ CREATE TABLE IF NOT EXISTS alertas_enviadas (
     enviada_en        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (extintor_id, umbral, fecha_vencimiento)
 );
+
+-- Usuarios que pueden entrar al sistema.
+-- Para crear uno usa:  npm run crear-usuario -- nombre contraseña
+-- (el script también crea esta tabla si no existe).
+CREATE TABLE IF NOT EXISTS usuarios (
+    id            SERIAL PRIMARY KEY,
+    usuario       VARCHAR(50)  NOT NULL UNIQUE,
+    password_hash VARCHAR(200) NOT NULL,
+    creado_en     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);

@@ -53,7 +53,27 @@ git push -u origin main
 3. En **Environment Variables** agrega:
    - `DATABASE_URL` = la connection string de Neon
    - `CORS_ORIGIN` = `https://TU-USUARIO.github.io`
+   - `AUTH_SECRET` = un texto largo y secreto inventado por ti (firma las sesiones del login).
+     Puedes generarlo con: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 4. Crea el servicio. Cuando termine, abre `https://TU-APP.onrender.com/prueba-db`: debe decir *"Conexión con PostgreSQL funcionando"*.
+
+## 3.1 Crear los usuarios del login
+
+La página pide usuario y contraseña. Los usuarios se crean desde tu PC:
+
+1. En el archivo `.env` pon `DATABASE_URL=` con la connection string de Neon.
+2. Ejecuta:
+
+```bash
+cd backend
+npm install
+npm run crear-usuario -- admin TuContraseñaSegura
+```
+
+- La contraseña debe tener al menos 8 caracteres y se guarda cifrada.
+- Repite el comando con otro nombre para crear más usuarios.
+- Si usas un nombre que ya existe, se **cambia su contraseña**.
+- Para borrar un usuario: en Neon → SQL Editor → `DELETE FROM usuarios WHERE usuario = 'nombre';`
 
 ## 4. Conectar el frontend con la API
 
@@ -95,5 +115,5 @@ Después se ejecuta solo todos los días a las 07:17 (hora UTC-4).
 ## Cosas a tener en cuenta
 
 - **60 días sin cambios**: en repositorios públicos GitHub pausa las tareas programadas si no hay actividad (commits) en 60 días. Te manda un correo antes; basta con entrar a Actions y presionar **Enable workflow**, o hacer cualquier commit.
-- **Sin login**: cualquiera que tenga el enlace de la página puede agregar o modificar extintores.
+- **Login**: solo los usuarios creados con `npm run crear-usuario` pueden ver o modificar extintores (la API rechaza cualquier petición sin sesión). La sesión dura 12 horas. Tras 5 intentos fallidos se bloquea ese usuario por 15 minutos.
 - **Probar en tu PC**: `cd backend && npm install && npm run dev` (API) y `npm run alertas` (revisión de correos). Usa el archivo `.env` (ver `.env.example`).

@@ -3,8 +3,12 @@ const cors = require('cors');
 const pool = require('./db');
 
 const extintoresRoutes = require('./routes/extintores');
+const auth = require('./auth');
 
 const app = express();
+
+// Render está detrás de un proxy: así req.ip es la IP real del visitante
+app.set('trust proxy', 1);
 
 // CORS_ORIGIN: la dirección de tu GitHub Pages, por ejemplo
 // https://tu-usuario.github.io  (si no se define, se permite cualquier origen)
@@ -16,8 +20,11 @@ app.use(cors({
 app.use(express.json());
 
 
-// Ruta de los extintores
-app.use('/extintores', extintoresRoutes);
+// Login (POST /auth/login)
+app.use('/auth', auth.router);
+
+// Ruta de los extintores (solo con sesión iniciada)
+app.use('/extintores', auth.requiereLogin, extintoresRoutes);
 
 
 // Ruta principal
