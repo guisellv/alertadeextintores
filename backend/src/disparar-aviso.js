@@ -10,13 +10,21 @@
 // Si no están, el correo igual se envía en la revisión diaria.
 
 async function dispararAvisoNuevo() {
-    const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO;
+    const token = (process.env.GITHUB_TOKEN || '').trim();
+
+    // Acepta "usuario/repo" o el link completo "https://github.com/usuario/repo(.git)"
+    const repo = (process.env.GITHUB_REPO || '')
+        .trim()
+        .replace(/^https?:\/\/(www\.)?github\.com\//i, '')
+        .replace(/\.git$/i, '')
+        .replace(/\/+$/, '');
 
     if (!token || !repo) {
         console.log('Falta GITHUB_TOKEN o GITHUB_REPO: el aviso se enviará en la revisión diaria.');
         return;
     }
+
+    console.log(`Pidiendo aviso inmediato a GitHub (repositorio: ${repo})...`);
 
     const respuesta = await fetch(
         `https://api.github.com/repos/${repo}/actions/workflows/alertas.yml/dispatches`,
@@ -36,7 +44,16 @@ async function dispararAvisoNuevo() {
     );
 
     if (!respuesta.ok) {
-        throw new Error(`GitHub respondió ${respuesta.status}: ${await respuesta.text()}`);
+        const pistas = {
+            401: 'el token está mal copiado o ya venció',
+            403: 'el token no tiene el permiso "Actions: Read and write"',
+            404: 'GITHUB_REPO está mal escrito o el token no tiene acceso a ese repositorio',
+            422: 'el archivo alertas.yml en GitHub no tiene la opción "nuevos"'
+        };
+        throw new Error(
+            `GitHub respondió ${respuesta.status} (${pistas[respuesta.status] || 'error desconocido'}): ` +
+            await respuesta.text()
+        );
     }
 
     console.log('Aviso de extintor nuevo enviado a GitHub Actions.');
