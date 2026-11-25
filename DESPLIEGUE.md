@@ -59,7 +59,10 @@ git push -u origin main
 
 ## 3.1 Crear los usuarios del login
 
-La página pide usuario y contraseña. Los usuarios se crean desde tu PC:
+La página pide usuario y contraseña. Cualquier persona puede crearse una cuenta
+con el botón **"Crear cuenta"** de la pantalla de inicio.
+
+También puedes crear usuarios (o cambiar una contraseña olvidada) desde tu PC:
 
 1. En el archivo `.env` pon `DATABASE_URL=` con la connection string de Neon.
 2. Ejecuta:
@@ -115,5 +118,5 @@ Después se ejecuta solo todos los días a las 07:17 (hora UTC-4).
 ## Cosas a tener en cuenta
 
 - **60 días sin cambios**: en repositorios públicos GitHub pausa las tareas programadas si no hay actividad (commits) en 60 días. Te manda un correo antes; basta con entrar a Actions y presionar **Enable workflow**, o hacer cualquier commit.
-- **Login**: solo los usuarios creados con `npm run crear-usuario` pueden ver o modificar extintores (la API rechaza cualquier petición sin sesión). La sesión dura 12 horas. Tras 5 intentos fallidos se bloquea ese usuario por 15 minutos.
+- **Login y registro libre**: para ver o modificar extintores hay que iniciar sesión, pero **cualquiera que tenga el enlace puede crearse una cuenta** con "Crear cuenta". Se permiten 5 cuentas nuevas por hora desde una misma conexión. La sesión dura 12 horas. Tras 5 intentos fallidos se bloquea ese usuario por 15 minutos.
 - **Probar en tu PC**: `cd backend && npm install && npm run dev` (API) y `npm run alertas` (revisión de correos). Usa el archivo `.env` (ver `.env.example`).

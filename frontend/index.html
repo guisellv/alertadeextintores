@@ -42,6 +42,48 @@
             </form>
 
             <p id="mensaje-login"></p>
+
+            <p class="cambiar-pantalla">
+                ¿No tienes cuenta?
+                <a href="#" id="ir-a-registro">Crear cuenta</a>
+            </p>
+        </section>
+    </main>
+
+    <!-- REGISTRO -->
+    <main id="pantalla-registro" hidden>
+        <section>
+            <h2>Crear cuenta</h2>
+
+            <form id="form-registro">
+
+                <label for="registro-usuario">Usuario</label>
+                <input type="text" id="registro-usuario" autocomplete="username"
+                    placeholder="Ej: juan.perez" minlength="3" maxlength="30"
+                    pattern="[A-Za-z0-9._\-]+"
+                    title="Solo letras, números, punto, guion o guion bajo (sin espacios ni tildes)"
+                    required>
+
+                <label for="registro-password">Contraseña</label>
+                <input type="password" id="registro-password" autocomplete="new-password"
+                    placeholder="Mínimo 8 caracteres" minlength="8" required>
+
+                <label for="registro-password2">Repetir contraseña</label>
+                <input type="password" id="registro-password2" autocomplete="new-password"
+                    minlength="8" required>
+
+                <button type="submit" id="boton-registrar">
+                    Crear cuenta
+                </button>
+
+            </form>
+
+            <p id="mensaje-registro"></p>
+
+            <p class="cambiar-pantalla">
+                ¿Ya tienes cuenta?
+                <a href="#" id="ir-a-login">Iniciar sesión</a>
+            </p>
         </section>
     </main>
 

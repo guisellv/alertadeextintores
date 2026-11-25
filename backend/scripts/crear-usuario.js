@@ -9,7 +9,7 @@
 
 const readline = require('readline/promises');
 const pool = require('../src/db');
-const { cifrarPassword } = require('../src/auth');
+const { cifrarPassword, asegurarTablaUsuarios } = require('../src/auth');
 
 async function preguntar(texto) {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -31,14 +31,7 @@ async function main() {
         throw new Error('La contraseña debe tener al menos 8 caracteres.');
     }
 
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id            SERIAL PRIMARY KEY,
-            usuario       VARCHAR(50)  NOT NULL UNIQUE,
-            password_hash VARCHAR(200) NOT NULL,
-            creado_en     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-        )
-    `);
+    await asegurarTablaUsuarios();
 
     const resultado = await pool.query(
         `INSERT INTO usuarios (usuario, password_hash)

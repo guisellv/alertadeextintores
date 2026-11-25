@@ -24,13 +24,27 @@ function mostrarLogin(mensaje = '') {
 
     document.getElementById('pantalla-app').hidden = true;
     document.getElementById('barra-sesion').hidden = true;
+    document.getElementById('pantalla-registro').hidden = true;
     document.getElementById('pantalla-login').hidden = false;
     document.getElementById('mensaje-login').textContent = mensaje;
     document.getElementById('login-usuario').focus();
 }
 
+function mostrarRegistro() {
+    document.getElementById('pantalla-login').hidden = true;
+    document.getElementById('pantalla-registro').hidden = false;
+    document.getElementById('mensaje-registro').textContent = '';
+    document.getElementById('registro-usuario').focus();
+}
+
+function guardarSesion(resultado) {
+    localStorage.setItem(CLAVE_TOKEN, resultado.token);
+    localStorage.setItem(CLAVE_USUARIO, resultado.usuario);
+}
+
 function mostrarApp() {
     document.getElementById('pantalla-login').hidden = true;
+    document.getElementById('pantalla-registro').hidden = true;
     document.getElementById('pantalla-app').hidden = false;
     document.getElementById('barra-sesion').hidden = false;
     document.getElementById('usuario-actual').textContent =
@@ -87,8 +101,7 @@ document.getElementById('form-login').addEventListener(
                 return;
             }
 
-            localStorage.setItem(CLAVE_TOKEN, resultado.token);
-            localStorage.setItem(CLAVE_USUARIO, resultado.usuario);
+            guardarSesion(resultado);
 
             document.getElementById('form-login').reset();
             mensaje.textContent = '';
@@ -103,6 +116,71 @@ document.getElementById('form-login').addEventListener(
         }
     }
 );
+
+// Crear cuenta nueva
+document.getElementById('form-registro').addEventListener(
+    'submit',
+    async (event) => {
+
+        event.preventDefault();
+
+        const boton = document.getElementById('boton-registrar');
+        const mensaje = document.getElementById('mensaje-registro');
+
+        const password = document.getElementById('registro-password').value;
+        const password2 = document.getElementById('registro-password2').value;
+
+        if (password !== password2) {
+            mensaje.textContent = 'Las contraseñas no coinciden.';
+            return;
+        }
+
+        boton.disabled = true;
+        mensaje.textContent = 'Creando cuenta... (la primera vez puede tardar hasta 1 minuto)';
+
+        try {
+            const respuesta = await fetch(URL_BASE + '/auth/registro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    usuario: document.getElementById('registro-usuario').value,
+                    password
+                })
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok) {
+                mensaje.textContent = resultado.mensaje || 'No se pudo crear la cuenta.';
+                return;
+            }
+
+            guardarSesion(resultado);
+
+            document.getElementById('form-registro').reset();
+            mensaje.textContent = '';
+            mostrarApp();
+
+        } catch (error) {
+            console.error(error);
+            mensaje.textContent = 'Error al conectar con el servidor.';
+
+        } finally {
+            boton.disabled = false;
+        }
+    }
+);
+
+// Cambiar entre "Iniciar sesión" y "Crear cuenta"
+document.getElementById('ir-a-registro').addEventListener('click', (event) => {
+    event.preventDefault();
+    mostrarRegistro();
+});
+
+document.getElementById('ir-a-login').addEventListener('click', (event) => {
+    event.preventDefault();
+    mostrarLogin();
+});
 
 // Cerrar sesión
 document.getElementById('boton-salir').addEventListener('click', () => {

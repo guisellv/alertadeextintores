@@ -117,9 +117,95 @@ function anotarFallo(clave) {
 }
 
 
-// ---------- Rutas: /auth/login y /auth/yo ----------
+// ---------- Tabla de usuarios (se crea sola si no existe) ----------
+
+let tablaLista = null;
+
+function asegurarTablaUsuarios() {
+    if (!tablaLista) {
+        tablaLista = pool.query(`
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id            SERIAL PRIMARY KEY,
+                usuario       VARCHAR(50)  NOT NULL UNIQUE,
+                password_hash VARCHAR(200) NOT NULL,
+                creado_en     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+            )
+        `).catch(error => {
+            tablaLista = null; // reintentar la próxima vez
+            throw error;
+        });
+    }
+    return tablaLista;
+}
+
+
+// ---------- Rutas: /auth/login, /auth/registro y /auth/yo ----------
 
 const router = express.Router();
+
+// Máximo de cuentas nuevas por IP cada hora (para evitar spam)
+const MAX_REGISTROS_POR_HORA = 5;
+const registros = new Map();
+
+router.post('/registro', async (req, res) => {
+    const usuario = String(req.body?.usuario || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+
+    if (!/^[a-z0-9._-]{3,30}$/.test(usuario)) {
+        return res.status(400).json({
+            mensaje: 'El usuario debe tener entre 3 y 30 caracteres: letras, números, punto, guion o guion bajo (sin espacios ni tildes).'
+        });
+    }
+
+    if (password.length < 8) {
+        return res.status(400).json({
+            mensaje: 'La contraseña debe tener al menos 8 caracteres.'
+        });
+    }
+
+    const registro = registros.get(req.ip);
+    if (registro && Date.now() - registro.desde < 60 * 60 * 1000) {
+        if (registro.cantidad >= MAX_REGISTROS_POR_HORA) {
+            return res.status(429).json({
+                mensaje: 'Se crearon demasiadas cuentas desde aquí. Intenta más tarde.'
+            });
+        }
+    } else {
+        registros.set(req.ip, { cantidad: 0, desde: Date.now() });
+    }
+
+    try {
+        await asegurarTablaUsuarios();
+
+        const resultado = await pool.query(
+            `INSERT INTO usuarios (usuario, password_hash)
+             VALUES ($1, $2)
+             ON CONFLICT (usuario) DO NOTHING
+             RETURNING id, usuario`,
+            [usuario, cifrarPassword(password)]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(409).json({
+                mensaje: 'Ese nombre de usuario ya existe. Elige otro.'
+            });
+        }
+
+        registros.get(req.ip).cantidad++;
+
+        const nuevo = resultado.rows[0];
+
+        // Queda con la sesión iniciada directamente
+        res.status(201).json({
+            token: crearToken(nuevo),
+            usuario: nuevo.usuario
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ mensaje: 'Error al crear la cuenta' });
+    }
+});
 
 router.post('/login', async (req, res) => {
     const usuario = String(req.body?.usuario || '').trim().toLowerCase();
@@ -137,6 +223,8 @@ router.post('/login', async (req, res) => {
     }
 
     try {
+        await asegurarTablaUsuarios();
+
         const resultado = await pool.query(
             'SELECT id, usuario, password_hash FROM usuarios WHERE usuario = $1',
             [usuario]
@@ -171,4 +259,4 @@ router.get('/yo', requiereLogin, (req, res) => {
 });
 
 
-module.exports = { router, requiereLogin, cifrarPassword };
+module.exports = { router, requiereLogin, cifrarPassword, asegurarTablaUsuarios };

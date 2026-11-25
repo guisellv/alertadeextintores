@@ -157,3 +157,19 @@ button:disabled {
     opacity: 0.6;
     cursor: wait;
 }
+
+#mensaje-registro {
+    margin-top: 15px;
+    font-weight: bold;
+    color: #c0392b;
+}
+
+.cambiar-pantalla {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.cambiar-pantalla a {
+    color: #1f4e79;
+    font-weight: bold;
+}
