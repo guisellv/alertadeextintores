@@ -91,6 +91,26 @@ router.post('/', async (req, res) => {
         // PostgreSQL no acepta "" como fecha o número, así que se guardan como NULL
         const vacioANull = valor => (valor === '' || valor === undefined ? null : valor);
 
+        // El código no puede repetirse (sin importar mayúsculas ni espacios)
+        const codigoLimpio = String(codigo || '').trim();
+
+        if (!codigoLimpio) {
+            return res.status(400).json({
+                mensaje: 'El código del extintor es obligatorio'
+            });
+        }
+
+        const repetido = await pool.query(
+            'SELECT 1 FROM extintores WHERE UPPER(TRIM(codigo)) = UPPER($1) LIMIT 1',
+            [codigoLimpio]
+        );
+
+        if (repetido.rows.length > 0) {
+            return res.status(409).json({
+                mensaje: `Ya existe un extintor con el código "${codigoLimpio}"`
+            });
+        }
+
         // El estado se calcula automáticamente
         const estado = calcularEstado(fecha_vencimiento);
 
@@ -102,7 +122,7 @@ router.post('/', async (req, res) => {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), FALSE)
             RETURNING *`,
             [
-                codigo,
+                codigoLimpio,
                 ubicacion,
                 vacioANull(capacidad),
                 fecha_vencimiento,
@@ -119,6 +139,13 @@ router.post('/', async (req, res) => {
         res.status(201).json({ ...resultado.rows[0], aviso });
 
     } catch (error) {
+        // Por si dos personas guardan el mismo código al mismo tiempo
+        if (error.code === '23505') {
+            return res.status(409).json({
+                mensaje: 'Ya existe un extintor con ese código'
+            });
+        }
+
         console.error(error);
 
         res.status(500).json({

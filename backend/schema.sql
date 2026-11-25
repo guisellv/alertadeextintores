@@ -16,6 +16,11 @@ CREATE TABLE IF NOT EXISTS extintores (
     aviso_nuevo_enviado BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+-- El código de cada extintor no se puede repetir
+-- (no importan mayúsculas ni espacios al inicio o al final).
+CREATE UNIQUE INDEX IF NOT EXISTS extintores_codigo_unico
+    ON extintores (UPPER(TRIM(codigo)));
+
 -- Registro de avisos ya enviados (para no repetir correos).
 -- El script de alertas también la crea solo si no existe.
 CREATE TABLE IF NOT EXISTS alertas_enviadas (

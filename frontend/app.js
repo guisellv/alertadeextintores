@@ -338,10 +338,8 @@ document.getElementById('form-extintor').addEventListener(
                 throw new Error(resultado.mensaje);
             }
 
-            // Mostrar también si se pudo pedir el aviso por correo
             document.getElementById('mensaje').textContent =
-                'Extintor agregado correctamente.' +
-                (resultado.aviso ? ' ' + resultado.aviso.mensaje : '');
+                'Extintor agregado correctamente.';
 
             document.getElementById('form-extintor').reset();
 
@@ -351,8 +349,9 @@ document.getElementById('form-extintor').addEventListener(
             console.error(error);
 
             if (error.message !== 'Sesión no válida') {
+                // Mostrar el motivo que manda el servidor (ej: código repetido)
                 document.getElementById('mensaje').textContent =
-                    'Error al agregar el extintor.';
+                    error.message || 'Error al agregar el extintor.';
             }
         }
     }

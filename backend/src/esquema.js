@@ -24,6 +24,18 @@ const SQL = `
     -- Los extintores que ya existían quedan en TRUE para no avisar de ellos.
     ALTER TABLE extintores ADD COLUMN IF NOT EXISTS aviso_nuevo_enviado BOOLEAN NOT NULL DEFAULT TRUE;
 
+    -- El código de cada extintor debe ser único (sin importar mayúsculas ni espacios).
+    -- Si ya hay códigos repetidos en la base, no se crea el índice para no romper
+    -- el servidor; la ruta de registro igual impide agregar nuevos repetidos.
+    DO $$
+    BEGIN
+        CREATE UNIQUE INDEX IF NOT EXISTS extintores_codigo_unico
+            ON extintores (UPPER(TRIM(codigo)));
+    EXCEPTION WHEN unique_violation THEN
+        RAISE NOTICE 'Hay códigos de extintor repetidos; no se creó el índice único';
+    END
+    $$;
+
     CREATE TABLE IF NOT EXISTS usuarios (
         id            SERIAL PRIMARY KEY,
         usuario       VARCHAR(50)  NOT NULL UNIQUE,
