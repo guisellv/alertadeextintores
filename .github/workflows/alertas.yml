@@ -3,7 +3,7 @@ name: Alertas de extintores
 on:
   schedule:
     # Todos los días a las 11:17 UTC (07:17 en UTC-4). GitHub usa hora UTC.
-    - cron: '17 11 * * *'
+    -    - cron: '5 21 * * *'
   # Permite ejecutarlo a mano desde la pestaña Actions (botón "Run workflow")
   workflow_dispatch:
 
