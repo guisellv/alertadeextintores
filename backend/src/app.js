@@ -4,6 +4,7 @@ const pool = require('./db');
 
 const extintoresRoutes = require('./routes/extintores');
 const auth = require('./auth');
+const { obtenerUltimoIntento } = require('./disparar-aviso');
 
 const app = express();
 
@@ -43,7 +44,8 @@ app.get('/estado', (req, res) => {
         login: true,
         aviso_inmediato: {
             GITHUB_TOKEN: process.env.GITHUB_TOKEN ? 'configurado' : 'FALTA',
-            GITHUB_REPO: process.env.GITHUB_REPO ? 'configurado' : 'FALTA'
+            GITHUB_REPO: process.env.GITHUB_REPO ? 'configurado' : 'FALTA',
+            ultimo_intento: obtenerUltimoIntento() || 'ninguno desde que arrancó el servidor'
         },
         AUTH_SECRET: process.env.AUTH_SECRET ? 'configurado' : 'FALTA'
     });

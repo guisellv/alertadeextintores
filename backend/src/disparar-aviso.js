@@ -9,6 +9,16 @@
 //
 // Si no están, el correo igual se envía en la revisión diaria.
 
+// Resultado del último intento (se muestra en /estado, sin datos secretos)
+let ultimoIntento = null;
+
+function anotar(ok, mensaje) {
+    ultimoIntento = { fecha: new Date().toISOString(), ok, mensaje };
+    console.log((ok ? '' : 'ERROR aviso inmediato: ') + mensaje);
+    return { ok, mensaje };
+}
+
+// Nunca lanza error: devuelve { ok, mensaje } para mostrarlo en la página
 async function dispararAvisoNuevo() {
     const token = (process.env.GITHUB_TOKEN || '').trim();
 
@@ -20,43 +30,56 @@ async function dispararAvisoNuevo() {
         .replace(/\/+$/, '');
 
     if (!token || !repo) {
-        console.log('Falta GITHUB_TOKEN o GITHUB_REPO: el aviso se enviará en la revisión diaria.');
-        return;
+        return anotar(false, 'Falta GITHUB_TOKEN o GITHUB_REPO en Render: el aviso se enviará en la revisión diaria.');
     }
 
-    console.log(`Pidiendo aviso inmediato a GitHub (repositorio: ${repo})...`);
+    try {
+        const respuesta = await fetch(
+            `https://api.github.com/repos/${repo}/actions/workflows/alertas.yml/dispatches`,
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/vnd.github+json',
+                    'X-GitHub-Api-Version': '2022-11-28',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ref: process.env.GITHUB_RAMA || 'main',
+                    inputs: { tipo: 'nuevos' }
+                }),
+                signal: AbortSignal.timeout(10000)
+            }
+        );
 
-    const respuesta = await fetch(
-        `https://api.github.com/repos/${repo}/actions/workflows/alertas.yml/dispatches`,
-        {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                ref: process.env.GITHUB_RAMA || 'main',
-                inputs: { tipo: 'nuevos' }
-            })
+        if (respuesta.ok) {
+            return anotar(true, 'Aviso por correo en camino (llega en 1 a 2 minutos).');
         }
-    );
 
-    if (!respuesta.ok) {
         const pistas = {
             401: 'el token está mal copiado o ya venció',
             403: 'el token no tiene el permiso "Actions: Read and write"',
-            404: 'GITHUB_REPO está mal escrito o el token no tiene acceso a ese repositorio',
+            404: `el token no tiene acceso al repositorio "${repo}" (¿lo creaste con otra cuenta de GitHub?) o el nombre está mal escrito`,
             422: 'el archivo alertas.yml en GitHub no tiene la opción "nuevos"'
         };
-        throw new Error(
-            `GitHub respondió ${respuesta.status} (${pistas[respuesta.status] || 'error desconocido'}): ` +
-            await respuesta.text()
-        );
-    }
 
-    console.log('Aviso de extintor nuevo enviado a GitHub Actions.');
+        let detalle = '';
+        try {
+            detalle = (await respuesta.json()).message || '';
+        } catch { /* sin detalle */ }
+
+        return anotar(false,
+            `GitHub rechazó el aviso inmediato (${respuesta.status}: ${pistas[respuesta.status] || 'error desconocido'})` +
+            (detalle ? ` [${detalle}]` : '') +
+            '. El aviso se enviará en la revisión diaria.');
+
+    } catch (error) {
+        return anotar(false, `No se pudo conectar con GitHub (${error.message}). El aviso se enviará en la revisión diaria.`);
+    }
 }
 
-module.exports = { dispararAvisoNuevo };
+function obtenerUltimoIntento() {
+    return ultimoIntento;
+}
+
+module.exports = { dispararAvisoNuevo, obtenerUltimoIntento };

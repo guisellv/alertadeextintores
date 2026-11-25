@@ -113,12 +113,10 @@ router.post('/', async (req, res) => {
             ]
         );
 
-        res.status(201).json(resultado.rows[0]);
+        // Pedir el correo de aviso a GitHub y contarle a la página cómo resultó
+        const aviso = await dispararAvisoNuevo();
 
-        // Pedir el correo de aviso (sin hacer esperar a quien agregó el extintor)
-        dispararAvisoNuevo().catch(error => {
-            console.error('No se pudo pedir el aviso inmediato (se enviará en la revisión diaria):', error.message);
-        });
+        res.status(201).json({ ...resultado.rows[0], aviso });
 
     } catch (error) {
         console.error(error);

@@ -338,8 +338,10 @@ document.getElementById('form-extintor').addEventListener(
                 throw new Error(resultado.mensaje);
             }
 
+            // Mostrar también si se pudo pedir el aviso por correo
             document.getElementById('mensaje').textContent =
-                'Extintor agregado correctamente.';
+                'Extintor agregado correctamente.' +
+                (resultado.aviso ? ' ' + resultado.aviso.mensaje : '');
 
             document.getElementById('form-extintor').reset();
 
