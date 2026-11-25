@@ -2,10 +2,21 @@ name: Alertas de extintores
 
 on:
   schedule:
-    # Todos los días a las 11:17 UTC (07:17 en UTC-4). GitHub usa hora UTC.
-    -    - cron: '5 21 * * *'
+    # Hora en UTC (tu hora + 4). 21:05 UTC = 5:05 de la tarde.
+    # Avisos de vencimiento: todos los días
+    - cron: '5 21 * * *'
+    # Resumen mensual: el día 1 de cada mes
+    - cron: '10 21 1 * *'
   # Permite ejecutarlo a mano desde la pestaña Actions (botón "Run workflow")
   workflow_dispatch:
+    inputs:
+      tipo:
+        description: 'Qué enviar'
+        type: choice
+        options:
+          - avisos
+          - resumen
+        default: avisos
 
 jobs:
   revisar:
@@ -24,9 +35,11 @@ jobs:
 
       - run: npm ci
 
-      - name: Revisar vencimientos y enviar correos
+      - name: Revisar extintores y enviar correo
         run: npm run alertas
         env:
+          # "resumen" si lo lanzó el horario del día 1 o si lo elegiste a mano
+          TIPO_AVISO: ${{ (github.event.schedule == '10 21 1 * *' || inputs.tipo == 'resumen') && 'resumen' || 'avisos' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
