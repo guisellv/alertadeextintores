@@ -35,6 +35,21 @@ app.get('/', (req, res) => {
 });
 
 
+// Ver qué versión está instalada y si el aviso inmediato está configurado
+// (no muestra ningún dato secreto)
+app.get('/estado', (req, res) => {
+    res.json({
+        version: (process.env.RENDER_GIT_COMMIT || 'desconocida').slice(0, 7),
+        login: true,
+        aviso_inmediato: {
+            GITHUB_TOKEN: process.env.GITHUB_TOKEN ? 'configurado' : 'FALTA',
+            GITHUB_REPO: process.env.GITHUB_REPO ? 'configurado' : 'FALTA'
+        },
+        AUTH_SECRET: process.env.AUTH_SECRET ? 'configurado' : 'FALTA'
+    });
+});
+
+
 // Probar conexión con PostgreSQL
 app.get('/prueba-db', async (req, res) => {
     try {
