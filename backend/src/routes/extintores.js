@@ -3,6 +3,20 @@ const express = require('express');
 const router = express.Router();
 
 const pool = require('../db');
+const { asegurarEsquema } = require('../esquema');
+const { dispararAvisoNuevo } = require('../disparar-aviso');
+
+
+// Antes de cualquier ruta: asegurar que existan las columnas nuevas
+router.use(async (req, res, next) => {
+    try {
+        await asegurarEsquema();
+        next();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ mensaje: 'Error al conectar con la base de datos' });
+    }
+});
 
 
 // Calcular el estado según la fecha de vencimiento
@@ -83,8 +97,9 @@ router.post('/', async (req, res) => {
         const resultado = await pool.query(
             `INSERT INTO extintores
             (codigo, ubicacion, capacidad, fecha_vencimiento,
-             ultima_mantencion, estado, observaciones)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ultima_mantencion, estado, observaciones,
+             creado_por, creado_en, aviso_nuevo_enviado)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), FALSE)
             RETURNING *`,
             [
                 codigo,
@@ -93,11 +108,17 @@ router.post('/', async (req, res) => {
                 fecha_vencimiento,
                 vacioANull(ultima_mantencion),
                 estado,
-                vacioANull(observaciones)
+                vacioANull(observaciones),
+                req.usuario.usuario // quien inició sesión
             ]
         );
 
         res.status(201).json(resultado.rows[0]);
+
+        // Pedir el correo de aviso (sin hacer esperar a quien agregó el extintor)
+        dispararAvisoNuevo().catch(error => {
+            console.error('No se pudo pedir el aviso inmediato (se enviará en la revisión diaria):', error.message);
+        });
 
     } catch (error) {
         console.error(error);

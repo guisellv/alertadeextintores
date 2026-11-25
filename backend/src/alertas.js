@@ -1,5 +1,6 @@
 const pool = require('./db');
-const { enviarCorreo } = require('./email');
+const { enviarAviso } = require('./email');
+const { asegurarEsquema } = require('./esquema');
 
 // Avisos: 30 días antes, 7 días antes y el día del vencimiento (o después).
 //
@@ -8,19 +9,6 @@ const { enviarCorreo } = require('./email');
 // guarda en la tabla alertas_enviadas qué aviso ya se mandó, así:
 //   - nunca se pierde un aviso aunque un día no se ejecute la revisión;
 //   - nunca llega el mismo aviso dos veces.
-
-async function asegurarTablaAlertas() {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS alertas_enviadas (
-            id                SERIAL PRIMARY KEY,
-            extintor_id       BIGINT  NOT NULL,
-            umbral            INTEGER NOT NULL,
-            fecha_vencimiento DATE    NOT NULL,
-            enviada_en        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            UNIQUE (extintor_id, umbral, fecha_vencimiento)
-        )
-    `);
-}
 
 // En qué etapa está un extintor según los días que le quedan
 function umbralActual(dias) {
@@ -49,7 +37,7 @@ function describir(extintor) {
 
 // Revisar los extintores y enviar UN correo con todos los avisos pendientes
 async function revisarExtintores() {
-    await asegurarTablaAlertas();
+    await asegurarEsquema();
 
     const resultado = await pool.query(`
         SELECT id, codigo, ubicacion, fecha_vencimiento, estado,
@@ -105,13 +93,10 @@ async function revisarExtintores() {
         ? `Extintor ${pendientes[0].codigo}: ${pendientes[0].umbral === 0 ? 'vencido' : 'próximo a vencer'}`
         : `${pendientes.length} extintores requieren atención`;
 
-    // Destinatario(s): ALERTA_EMAIL_DESTINO (puede ser una lista separada por comas)
-    // o, si no existe, el mismo correo que envía.
-    const destino = process.env.ALERTA_EMAIL_DESTINO || process.env.EMAIL_USER;
-
+    // Llega a todos los usuarios registrados (ver enviarAviso en email.js).
     // Si el correo falla, se lanza el error y NO se marca como enviado,
     // así se reintenta en la próxima revisión.
-    await enviarCorreo(destino, asunto, mensaje);
+    await enviarAviso(asunto, mensaje);
 
     for (const e of pendientes) {
         await pool.query(

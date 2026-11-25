@@ -1,11 +1,23 @@
 const pool = require('../src/db');
 const { revisarExtintores } = require('../src/alertas');
 const { enviarResumenMensual } = require('../src/resumen');
+const { enviarAvisosNuevos } = require('../src/nuevos');
 
+// TIPO_AVISO:
+//   "nuevos"  -> solo el correo de extintores recién agregados
+//                (lo pide el servidor cada vez que se agrega uno)
+//   "resumen" -> resumen mensual
+//   otro      -> revisión diaria: vencimientos + extintores nuevos
+//                que no se hayan avisado todavía
 async function main() {
-    if (process.env.TIPO_AVISO === 'resumen') {
+    const tipo = process.env.TIPO_AVISO;
+
+    if (tipo === 'resumen') {
         await enviarResumenMensual();
+    } else if (tipo === 'nuevos') {
+        await enviarAvisosNuevos();
     } else {
+        await enviarAvisosNuevos();
         await revisarExtintores();
     }
 }

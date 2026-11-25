@@ -144,6 +144,7 @@ document.getElementById('form-registro').addEventListener(
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     usuario: document.getElementById('registro-usuario').value,
+                    email: document.getElementById('registro-email').value,
                     password
                 })
             });
@@ -264,6 +265,14 @@ async function cargarExtintores() {
                 <p>
                     <strong>Observaciones:</strong>
                     ${escapar(extintor.observaciones || 'Ninguna')}
+                </p>
+
+                <p>
+                    <strong>Agregado por:</strong>
+                    ${escapar(extintor.creado_por || 'No registrado')}
+                    ${extintor.creado_en
+                        ? '(' + escapar(new Date(extintor.creado_en).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })) + ')'
+                        : ''}
                 </p>
 
                 ${

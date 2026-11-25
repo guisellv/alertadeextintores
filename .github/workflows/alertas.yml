@@ -16,7 +16,17 @@ on:
         options:
           - avisos
           - resumen
+          - nuevos
         default: avisos
+
+# Nombre que se ve en la pestaña Actions
+run-name: "Alertas de extintores (${{ github.event.schedule == '10 21 1 * *' && 'resumen' || inputs.tipo || 'avisos' }})"
+
+# Si se agregan varios extintores seguidos, los envíos se hacen de a uno
+# (así nunca llega el mismo aviso dos veces).
+concurrency:
+  group: alertas
+  cancel-in-progress: false
 
 jobs:
   revisar:
@@ -38,8 +48,10 @@ jobs:
       - name: Revisar extintores y enviar correo
         run: npm run alertas
         env:
-          # "resumen" si lo lanzó el horario del día 1 o si lo elegiste a mano
-          TIPO_AVISO: ${{ (github.event.schedule == '10 21 1 * *' || inputs.tipo == 'resumen') && 'resumen' || 'avisos' }}
+          # "resumen" si lo lanzó el horario del día 1;
+          # "nuevos" si lo pidió el servidor al agregar un extintor;
+          # si no, lo que elegiste a mano (o "avisos" en la revisión diaria)
+          TIPO_AVISO: ${{ github.event.schedule == '10 21 1 * *' && 'resumen' || inputs.tipo || 'avisos' }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}

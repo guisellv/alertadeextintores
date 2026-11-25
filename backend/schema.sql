@@ -1,5 +1,6 @@
 -- Ejecuta esto UNA vez en la base de datos de la nube
 -- (en Neon: menú "SQL Editor", pegar y presionar "Run").
+-- Nota: el servidor también crea o actualiza estas tablas solo (src/esquema.js).
 
 CREATE TABLE IF NOT EXISTS extintores (
     id                SERIAL PRIMARY KEY,
@@ -9,7 +10,10 @@ CREATE TABLE IF NOT EXISTS extintores (
     fecha_vencimiento DATE         NOT NULL,
     ultima_mantencion DATE,
     estado            VARCHAR(30)  NOT NULL DEFAULT 'vigente',
-    observaciones     TEXT
+    observaciones     TEXT,
+    creado_por        VARCHAR(50),             -- usuario que lo agregó
+    creado_en         TIMESTAMPTZ,
+    aviso_nuevo_enviado BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Registro de avisos ya enviados (para no repetir correos).
@@ -30,5 +34,6 @@ CREATE TABLE IF NOT EXISTS usuarios (
     id            SERIAL PRIMARY KEY,
     usuario       VARCHAR(50)  NOT NULL UNIQUE,
     password_hash VARCHAR(200) NOT NULL,
+    email         VARCHAR(254),               -- aquí le llegan las notificaciones
     creado_en     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );

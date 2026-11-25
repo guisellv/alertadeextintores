@@ -1,5 +1,6 @@
 const pool = require('./db');
-const { enviarCorreo } = require('./email');
+const { enviarAviso } = require('./email');
+const { asegurarEsquema } = require('./esquema');
 
 // Resumen mensual: un correo con el estado de TODOS los extintores.
 // Lo envía GitHub Actions el día 1 de cada mes.
@@ -25,6 +26,8 @@ function seccion(titulo, lista) {
 }
 
 async function enviarResumenMensual() {
+    await asegurarEsquema();
+
     const resultado = await pool.query(`
         SELECT codigo, ubicacion, fecha_vencimiento, estado,
                (fecha_vencimiento - CURRENT_DATE) AS dias_restantes
@@ -57,9 +60,7 @@ async function enviarResumenMensual() {
         ? `Resumen mensual de extintores: ${atencion} requieren atención`
         : 'Resumen mensual de extintores: todo en orden';
 
-    const destino = process.env.ALERTA_EMAIL_DESTINO || process.env.EMAIL_USER;
-
-    await enviarCorreo(destino, asunto, mensaje);
+    await enviarAviso(asunto, mensaje);
 
     console.log(`Resumen mensual enviado (${todos.length} extintores).`);
 }

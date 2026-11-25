@@ -117,26 +117,10 @@ function anotarFallo(clave) {
 }
 
 
-// ---------- Tabla de usuarios (se crea sola si no existe) ----------
+// Las tablas se crean / actualizan solas (ver esquema.js)
+const { asegurarEsquema } = require('./esquema');
 
-let tablaLista = null;
-
-function asegurarTablaUsuarios() {
-    if (!tablaLista) {
-        tablaLista = pool.query(`
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id            SERIAL PRIMARY KEY,
-                usuario       VARCHAR(50)  NOT NULL UNIQUE,
-                password_hash VARCHAR(200) NOT NULL,
-                creado_en     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-            )
-        `).catch(error => {
-            tablaLista = null; // reintentar la próxima vez
-            throw error;
-        });
-    }
-    return tablaLista;
-}
+const PATRON_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 
 // ---------- Rutas: /auth/login, /auth/registro y /auth/yo ----------
@@ -150,6 +134,7 @@ const registros = new Map();
 router.post('/registro', async (req, res) => {
     const usuario = String(req.body?.usuario || '').trim().toLowerCase();
     const password = String(req.body?.password || '');
+    const email = String(req.body?.email || '').trim().toLowerCase();
 
     if (!/^[a-z0-9._-]{3,30}$/.test(usuario)) {
         return res.status(400).json({
@@ -160,6 +145,12 @@ router.post('/registro', async (req, res) => {
     if (password.length < 8) {
         return res.status(400).json({
             mensaje: 'La contraseña debe tener al menos 8 caracteres.'
+        });
+    }
+
+    if (email.length > 254 || !PATRON_EMAIL.test(email)) {
+        return res.status(400).json({
+            mensaje: 'Escribe un correo electrónico válido.'
         });
     }
 
@@ -175,14 +166,14 @@ router.post('/registro', async (req, res) => {
     }
 
     try {
-        await asegurarTablaUsuarios();
+        await asegurarEsquema();
 
         const resultado = await pool.query(
-            `INSERT INTO usuarios (usuario, password_hash)
-             VALUES ($1, $2)
+            `INSERT INTO usuarios (usuario, password_hash, email)
+             VALUES ($1, $2, $3)
              ON CONFLICT (usuario) DO NOTHING
              RETURNING id, usuario`,
-            [usuario, cifrarPassword(password)]
+            [usuario, cifrarPassword(password), email]
         );
 
         if (resultado.rows.length === 0) {
@@ -223,7 +214,7 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        await asegurarTablaUsuarios();
+        await asegurarEsquema();
 
         const resultado = await pool.query(
             'SELECT id, usuario, password_hash FROM usuarios WHERE usuario = $1',
@@ -259,4 +250,4 @@ router.get('/yo', requiereLogin, (req, res) => {
 });
 
 
-module.exports = { router, requiereLogin, cifrarPassword, asegurarTablaUsuarios };
+module.exports = { router, requiereLogin, cifrarPassword };

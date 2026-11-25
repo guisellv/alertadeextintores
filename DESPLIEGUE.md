@@ -70,12 +70,14 @@ También puedes crear usuarios (o cambiar una contraseña olvidada) desde tu PC:
 ```bash
 cd backend
 npm install
-npm run crear-usuario -- admin TuContraseñaSegura
+npm run crear-usuario -- admin TuContraseñaSegura tucorreo@gmail.com
 ```
 
 - La contraseña debe tener al menos 8 caracteres y se guarda cifrada.
 - Repite el comando con otro nombre para crear más usuarios.
-- Si usas un nombre que ya existe, se **cambia su contraseña**.
+- Si usas un nombre que ya existe, se **cambian su contraseña y su correo**.
+- Para cambiar solo el correo de alguien: en Neon → SQL Editor →
+  `UPDATE usuarios SET email = 'nuevo@correo.com' WHERE usuario = 'nombre';`
 - Para borrar un usuario: en Neon → SQL Editor → `DELETE FROM usuarios WHERE usuario = 'nombre';`
 
 ## 4. Conectar el frontend con la API
@@ -96,6 +98,12 @@ Tu página quedará en `https://TU-USUARIO.github.io/control-extintores/`.
 
 ## 6. Activar los correos automáticos
 
+Los avisos llegan **al correo de cada usuario registrado** (en copia oculta, nadie ve el correo de los demás):
+
+- Vencimientos (30 días, 7 días y el día que vence) — todos los días.
+- Resumen mensual — el día 1 de cada mes.
+- **Extintor agregado** (con quién lo agregó) — 1 a 2 minutos después de agregarlo (ver paso 7).
+
 En el repositorio: **Settings → Secrets and variables → Actions → New repository secret**. Crea:
 
 | Nombre | Valor |
@@ -103,7 +111,7 @@ En el repositorio: **Settings → Secrets and variables → Actions → New repo
 | `DATABASE_URL` | la connection string de Neon |
 | `EMAIL_USER` | tu Gmail, ej. `tucorreo@gmail.com` |
 | `EMAIL_PASSWORD` | tu **contraseña de aplicación** de Gmail (16 letras) |
-| `ALERTA_EMAIL_DESTINO` | *(opcional)* a quién llegan los avisos; varios separados por coma |
+| `ALERTA_EMAIL_DESTINO` | *(opcional)* correos **extra** que también reciben los avisos; varios separados por coma |
 
 > Contraseña de aplicación: https://myaccount.google.com/apppasswords (requiere tener activada la verificación en 2 pasos).
 
@@ -112,6 +120,26 @@ Si hay extintores que vencen en 30 días o menos, te llegará el correo en un mi
 Si algo falla, la ejecución aparece en rojo y GitHub te avisa por correo.
 
 Después se ejecuta solo todos los días a las 07:17 (hora UTC-4).
+
+## 7. Aviso inmediato cuando se agrega un extintor
+
+Render gratis no puede mandar correos, así que cuando alguien agrega un extintor
+la API le pide a GitHub Actions que mande el aviso. Para eso necesita un token:
+
+1. En GitHub: tu foto (arriba a la derecha) → **Settings** → **Developer settings**
+   → **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
+2. Configura:
+   - **Token name**: `aviso-extintores`
+   - **Expiration**: la más larga que te permita (cuando venza, crea otro y cámbialo en Render)
+   - **Repository access**: *Only select repositories* → elige tu repositorio
+   - **Permissions** → **Repository permissions** → **Actions**: *Read and write*
+3. **Generate token** y copia el token (empieza con `github_pat_`; solo se muestra una vez).
+4. En Render → tu servicio → **Environment** agrega:
+   - `GITHUB_TOKEN` = el token
+   - `GITHUB_REPO` = `TU-USUARIO/TU-REPOSITORIO` (ej. `guisellv/alertadeextintores`)
+
+Si no configuras esto (o el token vence), el aviso del extintor nuevo llega igual,
+pero en la revisión diaria.
 
 ---
 
