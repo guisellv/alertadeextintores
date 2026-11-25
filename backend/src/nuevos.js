@@ -17,6 +17,7 @@ function fechaHora(valor) {
 function describir(e) {
     return [
         `- ${e.codigo} (${e.ubicacion})`,
+        `    Tipo: ${e.tipo || 'no indicado'}`,
         `    Agregado por: ${e.creado_por || 'desconocido'} el ${fechaHora(e.creado_en)}`,
         `    Vencimiento: ${e.fecha_vencimiento}`,
         `    Capacidad: ${e.capacidad ? e.capacidad + ' kg' : 'no indicada'}`,

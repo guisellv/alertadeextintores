@@ -236,6 +236,11 @@ async function cargarExtintores() {
                 <h3>${escapar(extintor.codigo)}</h3>
 
                 <p>
+                    <strong>Tipo:</strong>
+                    ${extintor.tipo ? escapar(extintor.tipo) : 'no indicado'}
+                </p>
+
+                <p>
                     <strong>Ubicación:</strong>
                     ${escapar(extintor.ubicacion)}
                 </p>
@@ -311,6 +316,7 @@ document.getElementById('form-extintor').addEventListener(
 
         const extintor = {
             codigo: document.getElementById('codigo').value,
+            tipo: document.getElementById('tipo').value,
             ubicacion: document.getElementById('ubicacion').value,
             capacidad: document.getElementById('capacidad').value,
             fecha_vencimiento:

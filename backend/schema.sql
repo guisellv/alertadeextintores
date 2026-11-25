@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS extintores (
     id                SERIAL PRIMARY KEY,
     codigo            VARCHAR(50)  NOT NULL,
+    tipo              VARCHAR(50),             -- PQS, CO2, agua, etc.
     ubicacion         VARCHAR(150) NOT NULL,
     capacidad         NUMERIC(6,2),
     fecha_vencimiento DATE         NOT NULL,

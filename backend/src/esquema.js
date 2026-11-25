@@ -15,6 +15,9 @@ const SQL = `
         observaciones     TEXT
     );
 
+    -- Tipo de extintor (PQS, CO2, agua, etc.)
+    ALTER TABLE extintores ADD COLUMN IF NOT EXISTS tipo VARCHAR(50);
+
     -- Quién y cuándo agregó cada extintor
     ALTER TABLE extintores ADD COLUMN IF NOT EXISTS creado_por VARCHAR(50);
     -- (sin valor por defecto, para que los antiguos queden sin fecha)

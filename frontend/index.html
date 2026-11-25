@@ -103,6 +103,17 @@
                 <label>Código</label>
                 <input type="text" id="codigo" placeholder="Ej: EXT-002" required>
 
+                <label>Tipo</label>
+                <input type="text" id="tipo" list="tipos-extintor" maxlength="50"
+                       placeholder="Ej: Polvo químico seco (PQS)">
+                <datalist id="tipos-extintor">
+                    <option value="Polvo químico seco (PQS)">
+                    <option value="CO2">
+                    <option value="Agua">
+                    <option value="Espuma (AFFF)">
+                    <option value="Acetato de potasio (Clase K)">
+                </datalist>
+
                 <label>Ubicación</label>
                 <input type="text" id="ubicacion" placeholder="Ej: Casa" required>
 

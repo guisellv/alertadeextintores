@@ -80,6 +80,7 @@ router.post('/', async (req, res) => {
     try {
         const {
             codigo,
+            tipo,
             ubicacion,
             capacidad,
             fecha_vencimiento,
@@ -118,8 +119,8 @@ router.post('/', async (req, res) => {
             `INSERT INTO extintores
             (codigo, ubicacion, capacidad, fecha_vencimiento,
              ultima_mantencion, estado, observaciones,
-             creado_por, creado_en, aviso_nuevo_enviado)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), FALSE)
+             creado_por, tipo, creado_en, aviso_nuevo_enviado)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), FALSE)
             RETURNING *`,
             [
                 codigoLimpio,
@@ -129,7 +130,8 @@ router.post('/', async (req, res) => {
                 vacioANull(ultima_mantencion),
                 estado,
                 vacioANull(observaciones),
-                req.usuario.usuario // quien inició sesión
+                req.usuario.usuario, // quien inició sesión
+                vacioANull(typeof tipo === 'string' ? tipo.trim() : tipo)
             ]
         );
 
