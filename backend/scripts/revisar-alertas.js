@@ -1,11 +1,16 @@
-// Revisa los extintores y envía los avisos por correo.
-// Lo ejecuta GitHub Actions todos los días (.github/workflows/alertas.yml).
-// También puedes probarlo en tu PC con:  npm run alertas
-
 const pool = require('../src/db');
 const { revisarExtintores } = require('../src/alertas');
+const { enviarResumenMensual } = require('../src/resumen');
 
-revisarExtintores()
+async function main() {
+    if (process.env.TIPO_AVISO === 'resumen') {
+        await enviarResumenMensual();
+    } else {
+        await revisarExtintores();
+    }
+}
+
+main()
     .catch(error => {
         console.error('Error al revisar extintores:', error);
         // Hace que GitHub Actions marque la ejecución como fallida
