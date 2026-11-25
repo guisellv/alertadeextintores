@@ -73,6 +73,10 @@ router.post('/', async (req, res) => {
             observaciones
         } = req.body;
 
+        // Los campos opcionales vacíos del formulario llegan como "":
+        // PostgreSQL no acepta "" como fecha o número, así que se guardan como NULL
+        const vacioANull = valor => (valor === '' || valor === undefined ? null : valor);
+
         // El estado se calcula automáticamente
         const estado = calcularEstado(fecha_vencimiento);
 
@@ -85,11 +89,11 @@ router.post('/', async (req, res) => {
             [
                 codigo,
                 ubicacion,
-                capacidad,
+                vacioANull(capacidad),
                 fecha_vencimiento,
-                ultima_mantencion,
+                vacioANull(ultima_mantencion),
                 estado,
-                observaciones
+                vacioANull(observaciones)
             ]
         );
 

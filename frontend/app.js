@@ -1,5 +1,13 @@
 
-const API_URL = 'http://localhost:3000/extintores';
+// Dirección del backend.
+// CAMBIA "TU-APP" por el nombre de tu servicio en Render
+// (lo ves en el panel de Render, ej: https://extintores-api.onrender.com).
+const URL_BACKEND_PRODUCCION = 'https://TU-APP.onrender.com';
+
+const esLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+
+const API_URL = (esLocal ? 'http://localhost:3000' : URL_BACKEND_PRODUCCION) +
+    '/extintores';
 
 
 // Cargar todos los extintores

@@ -1,0 +1,33 @@
+name: Alertas de extintores
+
+on:
+  schedule:
+    # Todos los días a las 11:17 UTC (07:17 en UTC-4). GitHub usa hora UTC.
+    - cron: '17 11 * * *'
+  # Permite ejecutarlo a mano desde la pestaña Actions (botón "Run workflow")
+  workflow_dispatch:
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+
+      - name: Revisar vencimientos y enviar correos
+        run: npm run alertas
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          ALERTA_EMAIL_DESTINO: ${{ secrets.ALERTA_EMAIL_DESTINO }}

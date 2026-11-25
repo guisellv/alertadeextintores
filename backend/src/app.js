@@ -1,14 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
-const { enviarCorreo } = require('./email');
-const { revisarExtintores } = require('./alertas');
 
 const extintoresRoutes = require('./routes/extintores');
 
 const app = express();
 
-app.use(cors());
+// CORS_ORIGIN: la dirección de tu GitHub Pages, por ejemplo
+// https://tu-usuario.github.io  (si no se define, se permite cualquier origen)
+app.use(cors({
+    origin: process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+        : true
+}));
 app.use(express.json());
 
 
@@ -44,50 +48,15 @@ app.get('/prueba-db', async (req, res) => {
 });
 
 
-// Probar envío de correo
-app.get('/prueba-correo', async (req, res) => {
-    try {
-        await enviarCorreo(
-            process.env.EMAIL_USER,
-            'Prueba - Sistema de Extintores',
-            'Este es un correo de prueba del sistema de control de extintores.'
-        );
-
-        res.json({
-            mensaje: 'Correo enviado correctamente'
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            mensaje: 'No se pudo enviar el correo'
-        });
-    }
-});
+// Las alertas por correo ya NO se envían desde este servidor.
+// Las envía una vez al día GitHub Actions con el script:
+//   npm run alertas   (backend/scripts/revisar-alertas.js)
+// Motivo: Render gratis se duerme y bloquea el envío por SMTP (Gmail).
 
 
-// Revisar alertas manualmente
-app.get('/revisar-alertas', async (req, res) => {
-    await revisarExtintores();
-
-    res.json({
-        mensaje: 'Revisión de alertas realizada'
-    });
-});
-
-
-// Revisar alertas al iniciar el servidor
-revisarExtintores();
-
-
-// Revisar alertas automáticamente cada 24 horas
-setInterval(() => {
-    revisarExtintores();
-}, 24 * 60 * 60 * 1000);
-
-
-// Iniciar servidor
-const PORT = 3000;
+// Iniciar servidor (Render asigna el puerto en la variable PORT)
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`Servidor funcionando en http://localhost:${PORT}`);
+    console.log(`Servidor funcionando en el puerto ${PORT}`);
 });
